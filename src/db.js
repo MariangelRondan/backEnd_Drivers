@@ -1,20 +1,25 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
-
 const fs = require("fs");
 
 const path = require("path");
-const { DB_USER, DB_PASSWORD, DB_HOST } = process.env;
+// const { DB_USER, DB_PASSWORD, DB_HOST } = process.env;
+const dataBaseDeploy = process.env.DATA_BASE_DEPLOY;
+
 const DriverModel = require("./models/Driver");
 const TeamModel = require("./models/Team");
 
-const sequelize = new Sequelize(
-  `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/drivers`,
-  {
-    logging: false,
-    native: false,
-  }
-);
+// const sequelize = new Sequelize(
+//   `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/drivers`,
+//   {
+//     logging: false,
+//     native: false,
+//   }
+// );
+const sequelize = new Sequelize(dataBaseDeploy, {
+  logging: false,
+  native: false,
+});
 const basename = path.basename(__filename);
 
 const modelDefiners = [];
@@ -45,8 +50,8 @@ const { Driver, Team } = sequelize.models;
 
 // Aca vendrian las relaciones
 // Product.hasMany(Reviews);
-Driver.belongsToMany(Team, { through: "DriverTeam" });
-Team.belongsToMany(Driver, { through: "DriverTeam" });
+Driver.belongsToMany(Team, { through: "DriverTeam", timestamps: false });
+Team.belongsToMany(Driver, { through: "DriverTeam", timestamps: false });
 
 module.exports = {
   Driver,

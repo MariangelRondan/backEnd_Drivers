@@ -1,8 +1,12 @@
 const { Driver, Team } = require("../db");
 const axios = require("axios");
-const URL = "http://localhost:5000/drivers";
+// const URL = "http://localhost:5000/drivers";
 const { Op } = require("sequelize");
 const { conn } = require("../db");
+const dotenv = require("dotenv");
+dotenv.config();
+
+const URL = process.env.URL_API;
 
 //GET ALL DRIVERS DE API Y BDD
 const getAllDrivers = async () => {
@@ -17,7 +21,6 @@ const getAllDrivers = async () => {
   });
 
   const infoApi = (await axios.get(`${URL}`)).data;
-
   const driverApi = infoCleaner(infoApi).map((driver) => ({
     ...driver,
     source: "API",
@@ -37,16 +40,6 @@ const getAllDrivers = async () => {
   return [...driversBDDWithSource, ...driverApi];
 };
 
-//POST NEW DRIVER
-// req.body {
-//   "name": "lucas",
-//   "lastname": "lopes",
-//   "description": " el mas lindo del mundo",
-//   "nationality": "urug",
-//   "dob": "1999-01-22",
-// 	"image": "https://t1.uc.ltmcdn.com/es/posts/1/2/5/significado_de_la_bandera_y_escudo_de_brasil_49521_600.webp",
-//   "teams": [1,2]
-// }
 const postDriver = async ({
   name,
   lastname,
@@ -57,7 +50,6 @@ const postDriver = async ({
   teams,
 }) => {
   const transaction = await conn.transaction();
-
   try {
     const newDriver = await Driver.create(
       {
@@ -70,13 +62,10 @@ const postDriver = async ({
       },
       { transaction }
     );
-
     if (teams && teams.length > 0) {
       await newDriver.setTeams(teams, { transaction });
     }
-
     await transaction.commit();
-
     return newDriver;
   } catch (error) {
     await transaction.rollback();
@@ -88,17 +77,8 @@ const postDriver = async ({
 const getDriverById = async (id, source) => {
   try {
     let driver;
-
     if (source === "api") {
       const response = await axios.get(`http://localhost:5000/drivers/${id}`);
-      console.log(response.data);
-      //body del post:
-      // driver = {
-      //   id: response.data.id,
-      //   name: response.data.name.forename,
-      //   surname: response.data.name.surname,
-      // };
-
       const driverArray = infoCleaner([response.data]);
       driver = driverArray[0];
     } else if (source === "bdd") {
@@ -111,14 +91,12 @@ const getDriverById = async (id, source) => {
           },
         },
       });
-      console.log(responseBDD);
-
       const teams = responseBDD.dataValues.Teams.map((team) => team.name).join(
         ", "
       );
 
       const driversBDD = {
-        ...responseBDD.dataValues, // Obten los valores reales de Sequelize
+        ...responseBDD.dataValues,
         source: "BDD",
         teams: teams,
       };
@@ -130,9 +108,33 @@ const getDriverById = async (id, source) => {
     return driver;
   } catch (error) {
     console.error(error);
-    return null; // Devuelve null en caso de error
+    return null;
   }
 };
+
+//responseBDD=> [
+// [0]   Driver {
+//   [0]     dataValues: {
+//   [0]       id: '82fc7596-5624-4ebb-bb6a-746f5444a62f',
+//   [0]       name: 'gabi',
+//   [0]       lastname: 'silvera',
+//   [0]     _previousDataValues: {
+//   [0]       id: '82fc7596-5624-4ebb-bb6a-746f5444a62f',
+//   [0]       name: 'gabi',
+//   [0]       lastname: 'silvera',
+//   [0]
+//   [0]     },
+//   [0]     uniqno: 1,
+//   [0]     _changed: Set(0) {},
+//   [0]     _options: {
+//   [0]       isNewRecord: false,
+//   [0]       _schema: null,
+//   [0]
+//   [0]     },
+//   [0]     isNewRecord: false,
+//   [0]     Teams: [ [Team], [Team] ]
+//   [0]   }
+//   [0] ]
 
 //DEPURA LA RESPUESTA DE LA API PARA TRAER SOLO INFO NECESARIA
 const infoCleaner = (array) => {
@@ -150,49 +152,4 @@ const infoCleaner = (array) => {
   });
 };
 
-//BUSQUEDA POR NAME BY QUERY
-// 📍 GET | /drivers/name?="..."
-// Esta ruta debe obtener los primeros 15 drivers que se encuentren con la palabra recibida por query.
-// Debe poder buscarlo independientemente de mayúsculas o minúsculas.
-// Si no existe el driver, debe mostrar un mensaje adecuado.
-// Debe buscar tanto los de la API como los de la base de datos.
-const getDriverByName = async (name) => {
-  const nameAdjusted = name[0].toUpperCase() + name.slice(1).toLowerCase();
-
-  const response = await axios(
-    `http://localhost:5000/drivers?name.forename=${nameAdjusted}`
-  );
-  const data = response.data;
-  const dataCleaned = infoCleaner(data);
-  const apiData = dataCleaned || [];
-
-  const driverBDD = await Driver.findAll({
-    where: {
-      name: {
-        [Op.iLike]: `%${nameAdjusted}%`,
-      },
-    },
-    include: [
-      {
-        model: Team,
-        attributes: ["name"],
-        through: {
-          attributes: [],
-        },
-      },
-    ],
-  });
-
-  const combinedResults = driverBDD.concat(apiData).slice(0, 15);
-
-  return combinedResults;
-};
-
-module.exports = { getDriverById, getDriverByName, getAllDrivers, postDriver };
-
-// const driversBDDWithSource = driversBDD.map((driver) => ({
-//   ...driver.dataValues, // Para obtener los valores reales de Sequelize
-//   source: "BDD",
-//   teams: driver.Teams.map((team) => team.name).join(", "),
-
-// } ));
+module.exports = { getDriverById, getAllDrivers, postDriver };
