@@ -26,11 +26,11 @@ const getAllTeams = async () => {
     // Remover duplicados si es necesario
     const uniqueTeams = [...new Set(teamsApi)];
     // Crea instancias de Team
-    uniqueTeams.forEach(async (team) => {
+    for (const team of uniqueTeams) {
       await Team.create({
         name: team,
       });
-    });
+    }
   }
   const teamsBDD = await Team.findAll();
   return teamsBDD;
