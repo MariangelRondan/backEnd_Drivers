@@ -73,12 +73,18 @@ const postDriver = async ({
   }
 };
 
+const getDriverByName = async (name) => {
+  const nameAdjusted = name[0].toUpperCase() + name.slice(1).toLowerCase();
+
+  const response = await axios;
+};
+
 //Controller para get Driver Detail
 const getDriverById = async (id, source) => {
   try {
     let driver;
     if (source === "api") {
-      const response = await axios.get(`http://localhost:5000/drivers/${id}`);
+      const response = await axios.get(`${URL}/${id}`);
       const driverArray = infoCleaner([response.data]);
       driver = driverArray[0];
     } else if (source === "bdd") {
