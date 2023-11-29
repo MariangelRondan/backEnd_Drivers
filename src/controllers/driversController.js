@@ -1,7 +1,6 @@
 const { Driver, Team } = require("../db");
 const axios = require("axios");
-// const URL = "http://localhost:5000/drivers";
-const { Op } = require("sequelize");
+// const { Op } = require("sequelize");
 const { conn } = require("../db");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -13,7 +12,7 @@ const getAllDrivers = async () => {
   const driversBDD = await Driver.findAll({
     include: {
       model: Team,
-      attributes: ["name"],
+      attributes: ["name"], //incluye el name de cada team
       through: {
         attributes: [],
       },
@@ -27,7 +26,9 @@ const getAllDrivers = async () => {
   }));
 
   const driversBDDWithSource = driversBDD.map((driver) => {
-    const teams = driver.Teams.map((team) => team.name).join(", ");
+    const teams = driver.Teams.map((team) => team.name).join(", "); //trae los teams en un array=> Teams: []
+
+    //La variable driverData contendrá todas las demás propiedades del objeto driver.dataValues excepto Teams.
     const { Teams, ...driverData } = driver.dataValues;
     return {
       ...driverData,
@@ -35,8 +36,7 @@ const getAllDrivers = async () => {
       teams,
     };
   });
-  console.log(driversBDD);
-
+  //fusiona ambos array
   return [...driversBDDWithSource, ...driverApi];
 };
 
@@ -50,6 +50,7 @@ const postDriver = async ({
   teams,
 }) => {
   const transaction = await conn.transaction();
+  //transaction se convierte en un objeto que representa la transacción en curso.
   try {
     const newDriver = await Driver.create(
       {
@@ -62,9 +63,16 @@ const postDriver = async ({
       },
       { transaction }
     );
+    // { transaction } asegura que esta operación esté incluida en la transacción. Si algo sale
+    //mal después de este punto, esta operación se revertirá durante el rollback de la transacción.
     if (teams && teams.length > 0) {
+      //Cuando estableces una relación de muchos a muchos entre dos modelos en Sequelize, se crea
+      //automáticamente un método set seguido del nombre del modelo en plural para esa relación.
       await newDriver.setTeams(teams, { transaction });
     }
+    //teams, { transaction } asegura que esta operación esté incluida en la transacción.
+
+    //la transacción se confirma
     await transaction.commit();
     return newDriver;
   } catch (error) {
@@ -73,11 +81,32 @@ const postDriver = async ({
   }
 };
 
-const getDriverByName = async (name) => {
-  const nameAdjusted = name[0].toUpperCase() + name.slice(1).toLowerCase();
+// const getDriverByName = async (name) => {
+//   const nameAdjusted = name[0].toUpperCase() + name.slice(1).toLowerCase();
 
-  const response = await axios;
-};
+//   const response = await axios.get(`${URL}?name.forename=${nameAdjusted}`);
+
+// const data= response.data;
+// const dataCleaned = infoCleaner(data)
+// const apiData = dataCleaned || [];
+
+// const driverBDD = await Driver.findAll({
+//   where:{
+//     name:{
+//       [Op.iLike]: `%${nameAdjusted}`
+//     }
+//   },
+//   include: [
+//   {
+//     model: Team,
+//   attributes: ["name"],
+// through: {
+//   attributes: []
+// }
+// }
+//   ]
+// })
+// };
 
 //Controller para get Driver Detail
 const getDriverById = async (id, source) => {

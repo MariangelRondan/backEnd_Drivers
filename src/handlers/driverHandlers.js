@@ -5,7 +5,7 @@ const {
   getDriverByName,
 } = require("../controllers/driversController");
 
-//by name y getAll de api y bdd
+// by name y getAll de api y bdd
 const getDriversHandler = async (req, res) => {
   const { name } = req.query;
 
@@ -33,6 +33,7 @@ const getDriversHandler = async (req, res) => {
       //   }
     } else {
       // const allDrivers = await getAllDrivers();
+
       return res.status(200).json(allDrivers);
     }
   } catch (error) {

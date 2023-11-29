@@ -32,6 +32,7 @@ const getAllTeams = async () => {
       });
     }
   }
+
   const teamsBDD = await Team.findAll();
   return teamsBDD;
 };
